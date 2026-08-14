@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bronx Park Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --green-900: #14361f;
+    --green-800: #1c4a2b;
+    --green-700: #256b3c;
+    --green-600: #2f8a4c;
+    --green-400: #5cbe7a;
+    --leaf: #7bc96f;
+    --river: #3a8fb7;
+    --amber: #e8a13a;
+    --amber-soft: #fbeccf;
+    --bg: #f4f6f1;
+    --surface: #ffffff;
+    --ink: #16241b;
+    --muted: #5d6b60;
+    --line: #e2e7dd;
+    --shadow: 0 1px 2px rgba(20,54,31,.06), 0 10px 30px -12px rgba(20,54,31,.18);
+    --shadow-lg: 0 20px 50px -18px rgba(20,54,31,.35);
+    --radius: 18px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: 'Inter', system-ui, sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
+
+  /* Header */
+  header.hero {
+    position: relative;
+    color: #fff;
+    background:
+      radial-gradient(1200px 400px at 80% -10%, rgba(123,201,111,.35), transparent 60%),
+      linear-gradient(160deg, var(--green-800), var(--green-900) 70%);
+    overflow: hidden;
+  }
+  header.hero::after {
+    content: "";
+    position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cpath d='M20 6c4 4 4 10 0 14-4-4-4-10 0-14z' fill='%23ffffff' opacity='.03'/%3E%3C/svg%3E");
+    opacity: .8;
+    pointer-events: none;
+  }
+  .hero-inner { position: relative; padding: 54px 0 40px; }
+  .brand { display: flex; align-items: center; gap: 12px; font-weight: 600; letter-spacing: .3px; }
+  .brand .dot { width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(140deg, var(--leaf), var(--green-600)); display: grid; place-items: center; box-shadow: inset 0 0 0 1px rgba(255,255,255,.2); }
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: clamp(2.2rem, 5vw, 3.6rem);
+    line-height: 1.02;
+    margin: 22px 0 12px;
+    letter-spacing: -.5px;
+  }
+  h1 .accent { color: var(--leaf); }
+  .lede { max-width: 620px; color: #d7e6da; font-size: 1.08rem; margin: 0 0 26px; }
+
+  .stats { display: flex; flex-wrap: wrap; gap: 28px; margin-top: 6px; }
+  .stat .n { font-family: 'Fraunces', serif; font-size: 1.9rem; font-weight: 600; line-height: 1; }
+  .stat .l { font-size: .82rem; text-transform: uppercase; letter-spacing: .12em; color: #a9c6ae; margin-top: 6px; }
+
+  /* Controls */
+  .controls {
+    position: sticky; top: 0; z-index: 20;
+    background: rgba(244,246,241,.85);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+    padding: 16px 0;
+    margin-bottom: 30px;
+  }
+  .controls-inner { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+  .search {
+    position: relative; flex: 1 1 260px; min-width: 220px;
+  }
+  .search svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+  .search input {
+    width: 100%; padding: 12px 14px 12px 42px;
+    border: 1px solid var(--line); border-radius: 12px;
+    background: var(--surface); font-size: .98rem; color: var(--ink);
+    box-shadow: var(--shadow); transition: border-color .15s, box-shadow .15s;
+  }
+  .search input:focus { outline: none; border-color: var(--green-400); box-shadow: 0 0 0 3px rgba(92,190,122,.2); }
+  .filters { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    border: 1px solid var(--line); background: var(--surface);
+    color: var(--muted); font-weight: 500; font-size: .9rem;
+    padding: 9px 15px; border-radius: 999px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 7px;
+    transition: all .15s; white-space: nowrap;
+  }
+  .chip:hover { border-color: var(--green-400); color: var(--green-700); }
+  .chip.active { background: var(--green-700); border-color: var(--green-700); color: #fff; box-shadow: var(--shadow); }
+  .chip .count { font-size: .78rem; opacity: .7; }
+  .chip.active .count { opacity: .85; }
+
+  /* Grid */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 22px; padding-bottom: 60px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--radius); overflow: hidden;
+    box-shadow: var(--shadow); display: flex; flex-direction: column;
+    transition: transform .2s ease, box-shadow .2s ease;
+  }
+  .card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+  .thumb { position: relative; aspect-ratio: 16/10; overflow: hidden; background: #dfe7da; }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s ease; }
+  .card:hover .thumb img { transform: scale(1.06); }
+  .badge {
+    position: absolute; top: 12px; left: 12px;
+    font-size: .74rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+    padding: 6px 11px; border-radius: 999px; backdrop-filter: blur(4px);
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .badge.open { background: rgba(47,138,76,.92); color: #fff; }
+  .badge.soon { background: rgba(232,161,58,.95); color: #40270a; }
+  .badge.renov { background: rgba(58,143,183,.92); color: #fff; }
+  .badge .pulse { width: 7px; height: 7px; border-radius: 50%; background: currentColor; box-shadow: 0 0 0 0 currentColor; }
+  .badge.soon .pulse { animation: pulse 2s infinite; }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(232,161,58,.6);} 70%{ box-shadow: 0 0 0 8px rgba(232,161,58,0);} 100%{ box-shadow:0 0 0 0 rgba(232,161,58,0);} }
+
+  .card-body { padding: 18px 18px 20px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+  .card h3 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.28rem; margin: 0; letter-spacing: -.3px; }
+  .neigh { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: .88rem; font-weight: 500; }
+  .desc { color: #46534a; font-size: .93rem; margin: 2px 0 4px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; }
+  .tag { font-size: .78rem; background: #eef3ea; color: var(--green-700); padding: 5px 10px; border-radius: 8px; font-weight: 500; }
+  .facts { display: flex; gap: 16px; padding-top: 12px; margin-top: 10px; border-top: 1px dashed var(--line); font-size: .84rem; color: var(--muted); }
+  .facts b { color: var(--ink); font-weight: 600; }
+  .opendate { font-size: .85rem; color: var(--amber); font-weight: 600; display: flex; align-items: center; gap: 6px; }
+
+  .empty { text-align: center; padding: 70px 20px; color: var(--muted); grid-column: 1/-1; }
+  .empty svg { opacity: .5; margin-bottom: 12px; }
+
+  footer { border-top: 1px solid var(--line); padding: 26px 0 40px; color: var(--muted); font-size: .86rem; }
+  footer a { color: var(--green-700); }
+
+  @media (max-width: 560px) {
+    .hero-inner { padding: 40px 0 30px; }
+    .stats { gap: 20px; }
+    .grid { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+    html { scroll-behavior: auto; }
+  }
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="wrap hero-inner">
+    <div class="brand">
+      <span class="dot">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 3c2.8 2.6 2.8 7 0 9.6C9.2 10 9.2 5.6 12 3z" fill="#fff"/><path d="M12 12v8M8 16l4-1.5L16 16" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </span>
+      <span>Bronx Park Tracker</span>
+    </div>
+    <h1>Every green space in the Bronx,<br /><span class="accent">open now &amp; coming soon.</span></h1>
+    <p class="lede">Track the borough's parks, greenways, and waterfront destinations — from Pelham Bay's 2,700 acres to brand-new spaces like Lower Concourse Park breaking ground on the Harlem River.</p>
+    <div class="stats">
+      <div class="stat"><div class="n" id="stat-total">0</div><div class="l">Parks tracked</div></div>
+      <div class="stat"><div class="n" id="stat-open">0</div><div class="l">Open today</div></div>
+      <div class="stat"><div class="n" id="stat-soon">0</div><div class="l">Opening soon</div></div>
+      <div class="stat"><div class="n" id="stat-acres">0</div><div class="l">Total acres</div></div>
+    </div>
+  </div>
+</header>
+
+<div class="controls">
+  <div class="wrap controls-inner">
+    <label class="search">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+      <input id="search" type="search" placeholder="Search parks, neighborhoods, or features…" aria-label="Search parks" />
+    </label>
+    <div class="filters" id="filters" role="group" aria-label="Filter by status"></div>
+  </div>
+</div>
+
+<main class="wrap">
+  <div class="grid" id="grid"></div>
+</main>
+
+<footer>
+  <div class="wrap">
+    Data compiled for demonstration from public NYC Parks information &amp; project announcements. Opening dates for upcoming parks are estimates and subject to change. Photos via Unsplash.
+  </div>
+</footer>
+
+<script>
+  // ---- Park data (mock/compiled from public NYC Parks info; opening dates are estimates) ----
+  const PARKS = [
+    {
+      name: "Lower Concourse Park", neighborhood: "Mott Haven / Port Morris", status: "soon",
+      openDate: "Est. 2027", acres: 6,
+      desc: "A new Harlem River waterfront park bringing public access, plazas, and a kayak launch to the South Bronx shoreline.",
+      tags: ["Waterfront", "Esplanade", "Kayak launch"],
+      img: "https://images.unsplash.com/photo-1503435980610-a51f3ddfee50?w=800&q=70&auto=format&fit=crop"
+    },
+    {
+      name: "Pelham Bay Park", neighborhood: "Pelham Bay", status: "open",
+      openDate: "Open", acres: 2772, established: "1888",
+      desc: "The city's largest park — three times the size of Central Park — with Orchard Beach, salt marshes, and miles of trails.",
+      tags: ["Beach", "Hiking", "Nature", "Golf"],
+      img: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&q=70&auto=format&fit=crop"
+    },
+    {
+      name: "Van Cortlandt Park", neighborhood: "Van Cortlandt Village", status: "open",
+      openDate: "Open", acres: 1146, established: "1888",
+      desc: "Rolling woodlands, the city's oldest public golf course, a freshwater lake, and historic colonial-era trails.",
+      tags: ["Golf", "Lake", "Trails", "Cross-country"],
+      img: "https://images.unsplash.com/photo-1500534623283-312aade485b7?w=800&q=70&auto=format&fit=crop"
+    },
+    {
+      name: "Bronx Park", neighborhood: "Bronx Park", status: "open",
+      openDate: "Open", acres: 718, established: "1888",
+      desc: "Home to the Bronx Zoo and New York Botanical Garden, straddling the wooded banks of the Bronx River.",
+      tags: ["Zoo", "Gardens", "River", "Family"],
+      img: "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=800&q=70&auto=format&fit=crop"
+    },
+    {
+      name: "Crotona Park", neighborhood: "Crotona Park East", status: "open",
+      openDate: "Open", acres: 128, established: "1888",
+      desc: "A vibrant community anchor with Indian Lake, a pool, tennis courts, and the annual summer Crotona jams.",
+      tags: ["Lake", "Pool", "Tennis", "Playground"],
+      img: "https://images.unsplash.com/photo-1552083375-1447ce886485?w=800&q=70&auto=format&fit=crop"
+    },
+    {
+      name: "Soundview Park", neighborhood: "Soundview", status: "open",
+      openDate: "Open", acres: 205, established: "1937",
+      desc: "Where the Bronx River meets the East River — restored wetlands, an amphitheater, and wide-open waterfront meadows.",
+      tags: ["Waterfront", "Wetlands", "Amphitheater"],
+      img: "https://images.unsplash.com/photo-1476231682828-37e571bc172f?w=800&q=70&auto=format&fit=crop"
+    },
+    {
+      name: "Concrete Plant Park", neighborhood: "West Farms", status: "open",
+      openDate: "Open", acres: 7, established: "2009",
+      desc: "A former concrete factory reborn as a Bronx River greenway park, its rust-colored plant structures preserved as sculpture.",
+      tags: ["Greenway", "River", "Biking", "Industrial"],
+      img: "https://images.unsplash.com/photo-1523712999610-f77fbcfc3843?w=800&q=70&auto=format&fit=crop"
+    },
+    {
+      name: "St. Mary's Park", neighborhood: "Mott Haven", status: "renov",
+      openDate: "Reopening phases through 2026", acres: 35, established: "1888",
+      desc: "The South Bronx's largest park, midway through a major renovation of its recreation center, fields, and hilltop paths.",
+      tags: ["Rec center", "Fields", "Playground"],
+      img: "https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=800&q=70&auto=format&fit=crop"
+    },
+    {
+      name: "Joyce Kilmer Park", neighborhood: "Concourse", status: "open",
+      openDate: "Open", acres: 6, established: "1900",
+      desc: "A formal Grand Concourse green with the Heinrich Heine Lorelei Fountain, steps from Yankee Stadium.",
+      tags: ["Historic", "Fountain", "Lawn"],
+      img: "https://images.unsplash.com/photo-1444492417251-9c84a5fa18e0?w=800&q=70&auto=format&fit=crop"
+    },
+    {
+      name: "Roberto Clemente State Park", neighborhood: "Morris Heights", status: "open",
+      openDate: "Open", acres: 25, established: "1973",
+      desc: "A Harlem River state park with a pool complex, waterfront promenade, and year-round community programming.",
+      tags: ["Waterfront", "Pool", "State park"],
+      img: "https://images.unsplash.com/photo-1533105079780-92b9be482077?w=800&q=70&auto=format&fit=crop"
+    },
+    {
+      name: "Ferry Point Park", neighborhood: "Throgs Neck", status: "open",
+      openDate: "Open", acres: 414, established: "1937",
+      desc: "Sprawling East River parkland beneath the Whitestone Bridge, now home to a Jack Nicklaus–designed links golf course.",
+      tags: ["Golf", "Waterfront", "Fields"],
+      img: "https://images.unsplash.com/photo-1587174486073-ae5e5cff23aa?w=800&q=70&auto=format&fit=crop"
+    },
+    {
+      name: "Starlight Park (Phase II)", neighborhood: "West Farms", status: "soon",
+      openDate: "Est. late 2026", acres: 17,
+      desc: "The next stretch of the Bronx River Greenway, adding new bridges and a continuous riverside path linking to Concrete Plant Park.",
+      tags: ["Greenway", "River", "Biking", "New bridges"],
+      img: "https://images.unsplash.com/photo-1502082553048-f009c37129b9?w=800&q=70&auto=format&fit=crop"
+    }
+  ];
+
+  const STATUS_LABEL = { open: "Open", soon: "Opening soon", renov: "Renovating" };
+
+  // ---- State ----
+  let activeStatus = "all";
+  let query = "";
+
+  // ---- Stats ----
+  function animateCount(el, target) {
+    const dur = 900, start = performance.now();
+    function tick(now) {
+      const p = Math.min(1, (now - start) / dur);
+      const eased = 1 - Math.pow(1 - p, 3);
+      el.textContent = Math.round(target * eased).toLocaleString();
+      if (p < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+  function renderStats() {
+    animateCount(document.getElementById('stat-total'), PARKS.length);
+    animateCount(document.getElementById('stat-open'), PARKS.filter(p => p.status === 'open').length);
+    animateCount(document.getElementById('stat-soon'), PARKS.filter(p => p.status === 'soon').length);
+    animateCount(document.getElementById('stat-acres'), PARKS.reduce((s, p) => s + p.acres, 0));
+  }
+
+  // ---- Filters ----
+  function buildFilters() {
+    const counts = {
+      all: PARKS.length,
+      open: PARKS.filter(p => p.status === 'open').length,
+      soon: PARKS.filter(p => p.status === 'soon').length,
+      renov: PARKS.filter(p => p.status === 'renov').length,
+    };
+    const defs = [
+      ["all", "All parks"], ["open", "Open now"], ["soon", "Opening soon"], ["renov", "Renovating"]
+    ];
+    const box = document.getElementById('filters');
+    box.innerHTML = defs.map(([k, label]) =>
+      `<button class="chip ${k === activeStatus ? 'active' : ''}" data-status="${k}">
+         ${label} <span class="count">${counts[k]}</span>
+       </button>`
+    ).join('');
+    box.querySelectorAll('.chip').forEach(btn => {
+      btn.addEventListener('click', () => {
+        activeStatus = btn.dataset.status;
+        buildFilters();
+        render();
+      });
+    });
+  }
+
+  // ---- Cards ----
+  function cardHTML(p) {
+    const facts = [];
+    if (p.established) facts.push(`<span>Est. <b>${p.established}</b></span>`);
+    facts.push(`<span><b>${p.acres.toLocaleString()}</b> acres</span>`);
+    const openLine = p.status !== 'open'
+      ? `<div class="opendate">
+           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+           ${p.openDate}
+         </div>`
+      : '';
+    return `
+      <article class="card">
+        <div class="thumb">
+          <img src="${p.img}" alt="${p.name} in the Bronx" loading="lazy" onerror="this.style.display='none';this.parentElement.style.background='linear-gradient(140deg,#5cbe7a,#256b3c)'" />
+          <span class="badge ${p.status}"><span class="pulse"></span>${STATUS_LABEL[p.status]}</span>
+        </div>
+        <div class="card-body">
+          <h3>${p.name}</h3>
+          <div class="neigh">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0116 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            ${p.neighborhood}
+          </div>
+          <p class="desc">${p.desc}</p>
+          ${openLine}
+          <div class="meta">${p.tags.map(t => `<span class="tag">${t}</span>`).join('')}</div>
+          <div class="facts">${facts.join('')}</div>
+        </div>
+      </article>`;
+  }
+
+  function render() {
+    const q = query.trim().toLowerCase();
+    const list = PARKS.filter(p => {
+      const statusOk = activeStatus === 'all' || p.status === activeStatus;
+      if (!statusOk) return false;
+      if (!q) return true;
+      const hay = (p.name + ' ' + p.neighborhood + ' ' + p.desc + ' ' + p.tags.join(' ')).toLowerCase();
+      return hay.includes(q);
+    });
+    const grid = document.getElementById('grid');
+    if (!list.length) {
+      grid.innerHTML = `<div class="empty">
+        <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+        <p>No parks match your search. Try another neighborhood or feature.</p>
+      </div>`;
+      return;
+    }
+    // Show "opening soon" and renovating first when viewing all, so upcoming parks lead
+    const order = { soon: 0, renov: 1, open: 2 };
+    if (activeStatus === 'all' && !q) list.sort((a, b) => order[a.status] - order[b.status]);
+    grid.innerHTML = list.map(cardHTML).join('');
+  }
+
+  document.getElementById('search').addEventListener('input', e => { query = e.target.value; render(); });
+
+  buildFilters();
+  render();
+  renderStats();
+</script>
+</body>
+</html>
